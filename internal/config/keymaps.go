@@ -201,7 +201,7 @@ func LoadKeyMap() (*KeyMap, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			utils.Debug("Warning: Created New %s file \u2014 using defaults", path)
-			err = SaveKeyMap(defaults)
+			_ = SaveKeyMap(defaults)
 			return defaults, nil
 		}
 		return nil, err

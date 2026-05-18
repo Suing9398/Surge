@@ -54,11 +54,11 @@ func TestSaveAndLoadKeyMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// We need to override GetSurgeDir or similar if it's used.
 	// Since I can't easily override the function, I'll test the inner logic.
-	
+
 	km := DefaultKeyMap()
 	cfg := km.ToConfig()
 	cfg.Dashboard["Quit"] = KeyBindingConfig{
