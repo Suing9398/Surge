@@ -362,12 +362,12 @@ func DefaultKeyMap() *KeyMap {
 				key.WithHelp("e", "done tab"),
 			),
 			NextTab: key.NewBinding(
-				key.WithKeys("tab", "right", "l"),
-				key.WithHelp("tab/→/l", "next tab"),
+				key.WithKeys("tab", "right"),
+				key.WithHelp("tab/→", "next tab"),
 			),
 			PrevTab: key.NewBinding(
-				key.WithKeys("shift+tab", "left", "h"),
-				key.WithHelp("shift+tab/←/h", "prev tab"),
+				key.WithKeys("shift+tab", "left"),
+				key.WithHelp("shift+tab/←", "prev tab"),
 			),
 			Add: key.NewBinding(
 				key.WithKeys("a", "n"),
