@@ -502,8 +502,13 @@ func TestToRuntimeConfig_Exhaustive(t *testing.T) {
 		}
 	}
 
+	ignoredPerformanceFields := map[string]bool{}
+
 	for i := 0; i < performanceType.NumField(); i++ {
 		fieldName := performanceType.Field(i).Name
+		if ignoredPerformanceFields[fieldName] {
+			continue
+		}
 		if _, found := runtimeType.FieldByName(fieldName); !found {
 			t.Errorf("Field %q in PerformanceSettings has no matching field in types.RuntimeConfig", fieldName)
 		}
