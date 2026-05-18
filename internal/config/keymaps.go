@@ -341,7 +341,7 @@ func (k *KeyMap) Validate() {
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldType := t.Field(i).Type
-		if fieldType.Kind() == reflect.Struct && fieldType != reflect.TypeFor[[]string]() {
+		if fieldType.Kind() == reflect.Struct {
 			if reflect.DeepEqual(field.Interface(), reflect.Zero(fieldType).Interface()) {
 				field.Set(dV.Field(i))
 			}

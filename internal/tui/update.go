@@ -61,6 +61,9 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if newKeys, err := config.LoadKeyMap(); err == nil && newKeys != nil {
 					m.keys = newKeys
 					utils.Debug("TUI: dynamically reloaded keymap.json from disk")
+					if postInfo, postErr := os.Stat(config.GetKeyMapConfigPath()); postErr == nil {
+						m.lastKeyMapModTime = postInfo.ModTime()
+					}
 				}
 			}
 		}
