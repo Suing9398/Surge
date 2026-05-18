@@ -193,7 +193,9 @@ type RootModel struct {
 	bugReportIncludeLatestLog  bool
 
 	// Keybindings
-	keys *config.KeyMap
+	keys                *config.KeyMap
+	lastKeyMapModTime   time.Time
+	lastConfigCheckTime time.Time
 
 	// Server port for display
 	ServerPort int
@@ -295,6 +297,10 @@ func InitialRootModel(serverPort int, currentVersion string, service core.Downlo
 	keys, _ := config.LoadKeyMap()
 	if keys == nil {
 		keys = config.DefaultKeyMap()
+	}
+	var keyMapModTime time.Time
+	if info, err := os.Stat(config.GetKeyMapConfigPath()); err == nil {
+		keyMapModTime = info.ModTime()
 	}
 
 	// Capture any config warnings produced during load so Init() can surface
@@ -456,6 +462,8 @@ func InitialRootModel(serverPort int, currentVersion string, service core.Downlo
 		urlUpdateInput:        urlUpdateInput,
 		catMgrInputs:          [4]textinput.Model{catNameInput, catDescInput, catPatternInput, catPathInput},
 		keys:                  keys,
+		lastKeyMapModTime:     keyMapModTime,
+		lastConfigCheckTime:   time.Now(),
 		ServerPort:            serverPort,
 		CurrentVersion:        currentVersion,
 		CurrentCommit:         commitValue,

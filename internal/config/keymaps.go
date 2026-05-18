@@ -217,6 +217,9 @@ func LoadKeyMap() (*KeyMap, error) {
 	}
 
 	defaults.ApplyConfig(&cfg)
+	// Self-healing: save the fully-merged and validated keymap back to disk
+	// so that any new defaults, keys, or sections are immediately preserved.
+	_ = SaveKeyMap(defaults)
 	return defaults, nil
 }
 
@@ -402,7 +405,7 @@ func DefaultKeyMap() *KeyMap {
 				key.WithHelp("l", "toggle log"),
 			),
 			ToggleHelp: key.NewBinding(
-				key.WithKeys("h"),
+				key.WithKeys("h", "/"),
 				key.WithHelp("h", "keybindings"),
 			),
 			ReportBug: key.NewBinding(
