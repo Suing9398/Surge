@@ -11,9 +11,9 @@ export default defineConfig({
 
   manifest: ({ browser }) => {
     const base: Record<string, unknown> = {
-      name: 'Surge Download Manager',
+      name: 'SurgeDM',
       description:
-        'High-performance download acceleration with live progress tracking. Intercepts downloads and accelerates them using Surge\'s multi-connection engine.',
+        'Extension to download files using Surge, a powerful download manager.',
       permissions: ['downloads', 'storage', 'notifications', 'webRequest'],
       host_permissions: ['http://127.0.0.1/*', '<all_urls>'],
     };
