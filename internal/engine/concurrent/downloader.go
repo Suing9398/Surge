@@ -796,7 +796,7 @@ func (d *ConcurrentDownloader) clear429() {
 	}
 }
 
-func (d *ConcurrentDownloader) sleepBackoff(ctx context.Context, attempt int, numConns int) {
+func (d *ConcurrentDownloader) sleepBackoff(ctx context.Context, attempt int) {
 	base := time.Duration(1<<attempt) * types.RetryBaseDelay
 	active429 := d.active429Count.Load()
 	if active429 > 2 {

@@ -46,7 +46,7 @@ func (d *ConcurrentDownloader) worker(ctx context.Context, id int, mirrors []str
 			if attempt > 0 {
 
 				if len(mirrors) == 1 {
-					d.sleepBackoff(ctx, attempt, len(d.activeTasks)+1)
+					d.sleepBackoff(ctx, attempt)
 				}
 
 				// FAILOVER: Switch mirror on retry
