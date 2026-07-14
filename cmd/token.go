@@ -15,7 +15,10 @@ When a local server is detected, the token it is using is printed.
 When the system service is running (started with 'surge service start'), use
 'surge service token' to read its dedicated token.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		token := resolveLocalToken()
+		// Read the persisted token directly — intentionally bypasses --token /
+		// SURGE_TOKEN so that `surge token` always reports what the local daemon
+		// is actually using, not an override that could mislead scripts.
+		token := ensureAuthToken()
 		fmt.Println(token)
 	},
 }

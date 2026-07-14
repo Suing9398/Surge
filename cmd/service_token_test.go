@@ -376,6 +376,56 @@ func TestTokenCmd_PrintsActiveServerToken(t *testing.T) {
 	assert.Equal(t, want, strings.TrimSpace(out))
 }
 
+// surge token must ignore SURGE_TOKEN / --token overrides and report the actual
+// daemon token on disk. Scripts that pipe `surge token` into a config file must
+// get the real token, not whatever env var happens to be set.
+func TestTokenCmd_IgnoresSURGE_TOKEN_Override(t *testing.T) {
+	if isElevated() {
+		t.Skip("skipping: test process is running as root")
+	}
+
+	isolateTokenEnv(t)
+	require.NoError(t, config.EnsureDirs())
+
+	const daemonToken = "daemon-persisted-token"
+	writeUserToken(t, daemonToken)
+
+	// Set the override — surge token must NOT echo this back.
+	t.Setenv("SURGE_TOKEN", "override-should-not-appear")
+
+	out := captureStdout(t, func() {
+		tokenCmd.Run(tokenCmd, nil)
+	})
+	assert.Equal(t, daemonToken, strings.TrimSpace(out),
+		"surge token must print the daemon's persisted token, not the SURGE_TOKEN override")
+}
+
+// When no port file matches, surge connect must prefer the system service token
+// over a stale user-level token to avoid 401s against the system daemon.
+func TestResolveTokenForConnectTarget_SystemTokenBeatsStaleUserToken(t *testing.T) {
+	if isElevated() {
+		t.Skip("skipping: elevated — system and user token paths are the same")
+	}
+
+	dirs := isolateTokenEnv(t)
+	require.NoError(t, config.EnsureDirs())
+
+	const sysToken = "system-service-token"
+	const staleUserToken = "stale-old-user-token"
+
+	// Both tokens exist on disk; no port file matches target port.
+	writeSystemTokenTo(t, dirs.systemState, sysToken)
+	writeUserToken(t, staleUserToken)
+
+	target, err := parseConnectTarget("127.0.0.1:1700", false)
+	require.NoError(t, err)
+
+	got, err := resolveTokenForConnectTarget(target)
+	require.NoError(t, err)
+	assert.Equal(t, sysToken, got,
+		"system token must win over stale user token in the no-port-file fallback path")
+}
+
 // ---------------------------------------------------------------------------
 // Subcommand registration
 // ---------------------------------------------------------------------------
