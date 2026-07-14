@@ -129,13 +129,13 @@ func resolveTokenForConnectTarget(target connectTarget) (string, error) {
 		}
 
 		// No matching port file. Probe token files in order of specificity:
-		//   1. System state dir — for daemons running as root/SYSTEM (issue #530)
-		//   2. User state dir   — for user-level daemons without a port file
+		//   1. User state dir   — for user-level daemons without a port file
+		//   2. System state dir — for daemons running as root/SYSTEM (issue #530)
 		//   3. Generate         — last resort (creates a new user-level token)
-		if tok, err := readSystemServiceToken(); err == nil && tok != "" {
+		if tok, err := readTokenFromFile(filepath.Join(config.GetStateDir(), "token")); err == nil && tok != "" {
 			return tok, nil
 		}
-		if tok, err := readTokenFromFile(filepath.Join(config.GetStateDir(), "token")); err == nil && tok != "" {
+		if tok, err := readSystemServiceToken(); err == nil && tok != "" {
 			return tok, nil
 		}
 		return ensureAuthToken(), nil

@@ -72,7 +72,8 @@ func (p *program) Stop(s service.Service) error {
 }
 
 // GetService is a var so tests can swap in a mock without touching the OS
-// service manager.
+// service manager.  Tests that reassign this must NOT use t.Parallel()
+// because the variable is package-scoped.
 var GetService = func() (service.Service, error) {
 	prg := &program{}
 	return service.New(prg, serviceConfig)

@@ -1,5 +1,7 @@
 //go:build !android
 
+// Tests in this file mutate package-level variables (globalToken, GetService)
+// and redirect os.Stdout via captureStdout.  They must NOT use t.Parallel().
 package cmd
 
 import (
@@ -72,14 +74,13 @@ func TestResolveTokenPath_UserMode(t *testing.T) {
 	if isElevated() {
 		t.Skip("skipping: test process is running as root; cannot test non-elevated path")
 	}
-	dirs := isolateTokenEnv(t)
+	isolateTokenEnv(t)
 	require.NoError(t, config.EnsureDirs())
 
 	got := resolveTokenPath()
 	// On non-elevated processes the token lives in the user state dir.
 	assert.Equal(t, filepath.Join(config.GetStateDir(), "token"), got,
 		"non-elevated resolveTokenPath should point to user state dir")
-	_ = dirs
 }
 
 // When elevated, resolveTokenPath must return the system state dir path.
