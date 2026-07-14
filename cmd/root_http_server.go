@@ -27,6 +27,17 @@ func resolveTokenPath() string {
 	return filepath.Join(config.GetStateDir(), "token")
 }
 
+// resolveRuntimeDir returns the runtime directory this process should use for
+// port/PID files.  Mirrors resolveTokenPath: elevated processes (system service
+// daemons) write to GetSystemRuntimeDir() so that non-elevated clients running
+// getActiveConnectionDetails() can discover them via the system candidate.
+func resolveRuntimeDir() string {
+	if isElevated() {
+		return config.GetSystemRuntimeDir()
+	}
+	return config.GetRuntimeDir()
+}
+
 const serverBindHost = "0.0.0.0"
 
 // findAvailablePort tries ports starting from 'start' until one is available
@@ -59,12 +70,13 @@ func bindServerListener(portFlag int) (int, net.Listener, error) {
 
 // saveActivePort writes the active port for local CLI and extension discovery.
 func saveActivePort(port int) {
-	if err := os.MkdirAll(config.GetRuntimeDir(), 0o755); err != nil {
+	runtimeDir := resolveRuntimeDir()
+	if err := os.MkdirAll(runtimeDir, 0o755); err != nil {
 		utils.Debug("Error creating runtime directory for port file: %v", err)
 		return
 	}
 
-	portFile := filepath.Join(config.GetRuntimeDir(), "port")
+	portFile := filepath.Join(runtimeDir, "port")
 	if err := os.WriteFile(portFile, []byte(fmt.Sprintf("%d", port)), 0o644); err != nil {
 		utils.Debug("Error writing port file: %v", err)
 	}
@@ -73,7 +85,7 @@ func saveActivePort(port int) {
 
 // removeActivePort cleans up the port file on exit
 func removeActivePort() {
-	portFile := filepath.Join(config.GetRuntimeDir(), "port")
+	portFile := filepath.Join(resolveRuntimeDir(), "port")
 	if err := os.Remove(portFile); err != nil && !os.IsNotExist(err) {
 		utils.Debug("Error removing port file: %v", err)
 	}
