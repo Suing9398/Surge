@@ -71,7 +71,9 @@ func (p *program) Stop(s service.Service) error {
 	}
 }
 
-func GetService() (service.Service, error) {
+// GetService is a var so tests can swap in a mock without touching the OS
+// service manager.
+var GetService = func() (service.Service, error) {
 	prg := &program{}
 	return service.New(prg, serviceConfig)
 }
@@ -118,7 +120,6 @@ var serviceInstallCmd = &cobra.Command{
 		return nil
 	},
 }
-
 
 var serviceUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
@@ -209,4 +210,3 @@ func init() {
 	serviceCmd.AddCommand(serviceTokenCmd)
 	serviceCmd.AddCommand(serviceRunCmd)
 }
-

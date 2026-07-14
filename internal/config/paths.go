@@ -60,6 +60,14 @@ func GetSystemSurgeDir() string {
 }
 
 func GetSystemStateDir() string {
+	// Allow tests (and advanced deployments) to override the system state dir
+	// without needing root access.  The env var must be an absolute path.
+	if override := strings.TrimSpace(os.Getenv("SURGE_SYSTEM_STATE_DIR")); override != "" {
+		if filepath.IsAbs(override) {
+			return override
+		}
+	}
+
 	if runtime.GOOS == "windows" {
 		return GetSystemSurgeDir()
 	}

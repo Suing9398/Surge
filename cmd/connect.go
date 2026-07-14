@@ -6,10 +6,12 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/SurgeDM/Surge/internal/config"
 	"github.com/SurgeDM/Surge/internal/service"
 	"github.com/SurgeDM/Surge/internal/tui"
 	"github.com/spf13/cobra"
@@ -121,24 +123,25 @@ func resolveTokenForConnectTarget(target connectTarget) (string, error) {
 	if isLocalHost(serverHost) {
 		_, serverPort := parseRemoteServerAddress(target.BaseURL)
 		if details, ok := getActiveConnectionDetails(); ok && details.port == serverPort {
+			// Port file matched — use the token associated with that runtime dir
+			// (already handles both user and system runtime dirs).
 			return resolveLocalTokenForDetails(details), nil
 		}
-		// Active connection details didn't match (or no port file). Try reading
-		// both the user and system token files so connecting to a root-owned
-		// daemon works without --token.
-		if tok := resolveLocalToken(); tok != "" {
+
+		// No matching port file. Probe token files in order of specificity:
+		//   1. System state dir — for daemons running as root/SYSTEM (issue #530)
+		//   2. User state dir   — for user-level daemons without a port file
+		//   3. Generate         — last resort (creates a new user-level token)
+		if tok, err := readSystemServiceToken(); err == nil && tok != "" {
 			return tok, nil
 		}
-		// Last resort: try the system state dir directly (daemon may be running
-		// as root even if the port file isn't under a root-owned runtime dir).
-		if tok, err := readSystemServiceToken(); err == nil && tok != "" {
+		if tok, err := readTokenFromFile(filepath.Join(config.GetStateDir(), "token")); err == nil && tok != "" {
 			return tok, nil
 		}
 		return ensureAuthToken(), nil
 	}
 	return "", fmt.Errorf("remote target %q requires authentication: use --token or set SURGE_TOKEN", target.BaseURL)
 }
-
 
 func parseConnectTarget(target string, allowInsecureHTTP bool) (connectTarget, error) {
 	target = strings.TrimSpace(target)
