@@ -16,6 +16,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// resolveTokenPath returns the path of the auth-token file that this
+// process should use.  When the process is running as root/SYSTEM the
+// token lives in the system state directory so that the daemon and the
+// interactive user look in the same place.
+func resolveTokenPath() string {
+	if isElevated() {
+		return filepath.Join(config.GetSystemStateDir(), "token")
+	}
+	return filepath.Join(config.GetStateDir(), "token")
+}
+
 const serverBindHost = "0.0.0.0"
 
 // findAvailablePort tries ports starting from 'start' until one is available
@@ -146,24 +157,46 @@ func authMiddleware(token string, next http.Handler) http.Handler {
 }
 
 func ensureAuthToken() string {
-	stateTokenFile := filepath.Join(config.GetStateDir(), "token")
-	if token, err := readTokenFromFile(stateTokenFile); err == nil {
+	tokenFile := resolveTokenPath()
+	if token, err := readTokenFromFile(tokenFile); err == nil {
 		return token
 	}
 
 	token := uuid.New().String()
-	if err := writeTokenToFile(stateTokenFile, token); err != nil {
-		utils.Debug("Failed to write token file in state dir: %v", err)
+	if err := writeTokenToFile(tokenFile, token); err != nil {
+		utils.Debug("Failed to write token file in %s: %v", tokenFile, err)
 	}
 	return token
 }
 
 func persistAuthToken(token string) {
-	stateTokenFile := filepath.Join(config.GetStateDir(), "token")
-
-	if err := writeTokenToFile(stateTokenFile, token); err != nil {
-		utils.Debug("Failed to write token file in state dir: %v", err)
+	tokenFile := resolveTokenPath()
+	if err := writeTokenToFile(tokenFile, token); err != nil {
+		utils.Debug("Failed to write token file in %s: %v", tokenFile, err)
 	}
+}
+
+// ensureSystemToken reads (or generates) the token used by the system service
+// and returns it.  This is always in GetSystemStateDir regardless of the
+// current user — callers that need the system token use this directly.
+func ensureSystemToken() (string, error) {
+	tokenFile := filepath.Join(config.GetSystemStateDir(), "token")
+	if token, err := readTokenFromFile(tokenFile); err == nil {
+		return token, nil
+	}
+	token := uuid.New().String()
+	if err := writeTokenToFile(tokenFile, token); err != nil {
+		return "", fmt.Errorf("failed to write system token to %s: %w", tokenFile, err)
+	}
+	return token, nil
+}
+
+// readSystemServiceToken reads the token from the system state directory
+// without generating one.  Returns an error if the file doesn't exist or
+// isn't readable (the caller may need elevated privileges).
+func readSystemServiceToken() (string, error) {
+	tokenFile := filepath.Join(config.GetSystemStateDir(), "token")
+	return readTokenFromFile(tokenFile)
 }
 
 func readTokenFromFile(path string) (string, error) {

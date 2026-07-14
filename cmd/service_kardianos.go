@@ -95,8 +95,30 @@ func runAction(action func(service.Service) error, successMsg string) func(*cobr
 var serviceInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Surge as a system service",
-	RunE:  runAction(func(s service.Service) error { return s.Install() }, "Service installed successfully"),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		s, err := GetService()
+		if err != nil {
+			return err
+		}
+		if err := s.Install(); err != nil {
+			return err
+		}
+		// Pre-generate the service token in the system state directory so
+		// that `surge token` / `surge connect` can discover it without users
+		// having to use --token manually.
+		token, tokenErr := ensureSystemToken()
+		fmt.Println("Service installed successfully")
+		if tokenErr == nil {
+			fmt.Printf("Service auth token: %s\n", token)
+			fmt.Println("Use 'surge service token' to print this token again.")
+		} else {
+			fmt.Printf("Warning: could not persist service token: %v\n", tokenErr)
+			fmt.Println("Run 'sudo surge service token' after starting the service to retrieve it.")
+		}
+		return nil
+	},
 }
+
 
 var serviceUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
@@ -145,6 +167,31 @@ var serviceCmd = &cobra.Command{
 	Short: "Manage Surge as a system service",
 }
 
+// serviceTokenCmd prints the auth token used by the system service daemon.
+var serviceTokenCmd = &cobra.Command{
+	Use:   "token",
+	Short: "Print the auth token used by the system service daemon",
+	Long: `Print the auth token that the Surge system service uses.
+
+The system service (installed with 'surge service install') stores its token
+separately from the interactive-user token. Use this command to retrieve it
+when connecting via 'surge connect' or setting up the browser extension.
+
+Note: reading the system token file may require elevated privileges (sudo).`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		token, err := readSystemServiceToken()
+		if err != nil {
+			var hint string
+			if !isElevated() {
+				hint = " (try running with sudo/administrator privileges)"
+			}
+			return fmt.Errorf("could not read system service token%s: %w", hint, err)
+		}
+		fmt.Println(token)
+		return nil
+	},
+}
+
 // __run is the entry point the installer writes into ExecStart
 var serviceRunCmd = &cobra.Command{
 	Use:    "__run",
@@ -159,5 +206,7 @@ func init() {
 	serviceCmd.AddCommand(serviceStartCmd)
 	serviceCmd.AddCommand(serviceStopCmd)
 	serviceCmd.AddCommand(serviceStatusCmd)
+	serviceCmd.AddCommand(serviceTokenCmd)
 	serviceCmd.AddCommand(serviceRunCmd)
 }
+

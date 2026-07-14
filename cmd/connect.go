@@ -123,10 +123,22 @@ func resolveTokenForConnectTarget(target connectTarget) (string, error) {
 		if details, ok := getActiveConnectionDetails(); ok && details.port == serverPort {
 			return resolveLocalTokenForDetails(details), nil
 		}
+		// Active connection details didn't match (or no port file). Try reading
+		// both the user and system token files so connecting to a root-owned
+		// daemon works without --token.
+		if tok := resolveLocalToken(); tok != "" {
+			return tok, nil
+		}
+		// Last resort: try the system state dir directly (daemon may be running
+		// as root even if the port file isn't under a root-owned runtime dir).
+		if tok, err := readSystemServiceToken(); err == nil && tok != "" {
+			return tok, nil
+		}
 		return ensureAuthToken(), nil
 	}
 	return "", fmt.Errorf("remote target %q requires authentication: use --token or set SURGE_TOKEN", target.BaseURL)
 }
+
 
 func parseConnectTarget(target string, allowInsecureHTTP bool) (connectTarget, error) {
 	target = strings.TrimSpace(target)
