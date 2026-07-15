@@ -171,6 +171,8 @@ var serviceStatusCmd = &cobra.Command{
 				fmt.Printf("Service is running (PID: %d, Port: %d)\n", pid, port)
 			} else if pid > 0 {
 				fmt.Printf("Service is running (PID: %d)\n", pid)
+			} else if port > 0 {
+				fmt.Printf("Service is running (Port: %d)\n", port)
 			} else {
 				fmt.Println("Service is running")
 			}

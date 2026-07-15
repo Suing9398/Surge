@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/SurgeDM/Surge/internal/config"
 	"github.com/SurgeDM/Surge/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -153,25 +152,25 @@ func init() {
 
 func savePID() {
 	pid := os.Getpid()
-	if err := os.MkdirAll(config.GetRuntimeDir(), 0o755); err != nil {
+	if err := os.MkdirAll(resolveRuntimeDir(), 0o755); err != nil {
 		utils.Debug("Error creating runtime directory for PID file: %v", err)
 		return
 	}
-	pidFile := filepath.Join(config.GetRuntimeDir(), "pid")
+	pidFile := filepath.Join(resolveRuntimeDir(), "pid")
 	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
 		utils.Debug("Error writing PID file: %v", err)
 	}
 }
 
 func removePID() {
-	pidFile := filepath.Join(config.GetRuntimeDir(), "pid")
+	pidFile := filepath.Join(resolveRuntimeDir(), "pid")
 	if err := os.Remove(pidFile); err != nil && !os.IsNotExist(err) {
 		utils.Debug("Error removing PID file: %v", err)
 	}
 }
 
 func readPID() int {
-	pidFile := filepath.Join(config.GetRuntimeDir(), "pid")
+	pidFile := filepath.Join(resolveRuntimeDir(), "pid")
 	data, err := os.ReadFile(pidFile)
 	if err != nil {
 		return 0
