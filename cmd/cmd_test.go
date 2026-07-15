@@ -105,17 +105,18 @@ func TestFindAvailablePort_AllPortsOccupied(t *testing.T) {
 // =============================================================================
 
 func TestSaveAndRemoveActivePort(t *testing.T) {
-	// Setup temp dir
 	tmpDir := t.TempDir()
 	t.Setenv("XDG_RUNTIME_DIR", tmpDir)
-	t.Setenv("SURGE_SYSTEM_RUNTIME_DIR", tmpDir)
-	t.Setenv("SURGE_SYSTEM_STATE_DIR", tmpDir)
-	t.Setenv("XDG_CONFIG_HOME", tmpDir) // For EnsureDirs to work happily
+	t.Setenv("XDG_CONFIG_HOME", tmpDir)
 	t.Setenv("APPDATA", tmpDir)
-	// Ensure config dirs exist
+	t.Setenv("XDG_STATE_HOME", tmpDir)
+
 	if err := config.EnsureDirs(); err != nil {
 		t.Fatalf("Failed to ensure dirs: %v", err)
 	}
+
+	t.Setenv("SURGE_SYSTEM_RUNTIME_DIR", config.GetRuntimeDir())
+	t.Setenv("SURGE_SYSTEM_STATE_DIR", config.GetStateDir())
 
 	// Save port
 	testPort := 12345
@@ -337,22 +338,23 @@ func TestResolveTokenForConnectTarget_IPv6LoopbackUsesLocalToken(t *testing.T) {
 func TestResolveTokenForConnectTarget_UsesActiveTokenForMatchingLocalPort(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("XDG_RUNTIME_DIR", tmpDir)
-	t.Setenv("SURGE_SYSTEM_RUNTIME_DIR", tmpDir)
-	t.Setenv("SURGE_SYSTEM_STATE_DIR", tmpDir)
 	t.Setenv("XDG_CONFIG_HOME", tmpDir)
 	t.Setenv("APPDATA", tmpDir)
 	t.Setenv("XDG_STATE_HOME", tmpDir)
 	t.Setenv("SURGE_TOKEN", "")
+
+	if err := config.EnsureDirs(); err != nil {
+		t.Fatalf("Failed to ensure dirs: %v", err)
+	}
+
+	t.Setenv("SURGE_SYSTEM_RUNTIME_DIR", config.GetRuntimeDir())
+	t.Setenv("SURGE_SYSTEM_STATE_DIR", config.GetStateDir())
 
 	origToken := globalToken
 	globalToken = ""
 	t.Cleanup(func() {
 		globalToken = origToken
 	})
-
-	if err := config.EnsureDirs(); err != nil {
-		t.Fatalf("Failed to ensure dirs: %v", err)
-	}
 	if err := writeTokenToFile(filepath.Join(config.GetStateDir(), "token"), "connect-token"); err != nil {
 		t.Fatalf("write token failed: %v", err)
 	}
@@ -1316,16 +1318,18 @@ func TestCorsMiddleware_AllMethods(t *testing.T) {
 // =============================================================================
 
 func TestPortFileLifecycle(t *testing.T) {
-	// Setup temp dir
 	tmpDir := t.TempDir()
 	t.Setenv("XDG_RUNTIME_DIR", tmpDir)
-	t.Setenv("SURGE_SYSTEM_RUNTIME_DIR", tmpDir)
-	t.Setenv("SURGE_SYSTEM_STATE_DIR", tmpDir)
 	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+	t.Setenv("APPDATA", tmpDir)
+	t.Setenv("XDG_STATE_HOME", tmpDir)
 
 	if err := config.EnsureDirs(); err != nil {
 		t.Fatalf("Failed to ensure dirs: %v", err)
 	}
+
+	t.Setenv("SURGE_SYSTEM_RUNTIME_DIR", config.GetRuntimeDir())
+	t.Setenv("SURGE_SYSTEM_STATE_DIR", config.GetStateDir())
 
 	// Clean up first
 	removeActivePort()
