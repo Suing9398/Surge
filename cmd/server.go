@@ -206,7 +206,7 @@ func startServerLogic(cmd *cobra.Command, args []string, portFlag int, batchFile
 	fmt.Printf("Serving on %s:%d\n", host, port)
 	fmt.Println("Press Ctrl+C to exit.")
 
-	StartHeadlessConsumer(cmd.Context(), GlobalService)
+	StartHeadlessConsumer(cmd.Root().Context(), GlobalService)
 
 	// Auto-resume paused downloads (unless --no-resume)
 	if !noResume {
@@ -240,7 +240,7 @@ func startServerLogic(cmd *cobra.Command, args []string, portFlag int, batchFile
 		case sig := <-sigChan:
 			fmt.Printf("\nReceived %s. Shutting down...\n", sig)
 			_ = executeGlobalShutdown(fmt.Sprintf("server signal: %s", sig))
-		case <-cmd.Context().Done():
+		case <-cmd.Root().Context().Done():
 			fmt.Printf("\nService stop requested. Shutting down...\n")
 			_ = executeGlobalShutdown("server: service context cancelled")
 		case <-exitWhenDoneCh:
@@ -258,7 +258,7 @@ func startServerLogic(cmd *cobra.Command, args []string, portFlag int, batchFile
 	case sig := <-sigChan:
 		fmt.Printf("\nReceived %s. Shutting down...\n", sig)
 		_ = executeGlobalShutdown(fmt.Sprintf("server signal: %s", sig))
-	case <-cmd.Context().Done():
+	case <-cmd.Root().Context().Done():
 		fmt.Printf("\nService stop requested. Shutting down...\n")
 		_ = executeGlobalShutdown("server: service context cancelled")
 	}
