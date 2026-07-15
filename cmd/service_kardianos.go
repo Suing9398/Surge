@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/SurgeDM/Surge/internal/config"
 	"github.com/kardianos/service"
 	"github.com/spf13/cobra"
 )
@@ -154,7 +155,15 @@ var serviceStatusCmd = &cobra.Command{
 		}
 		switch status {
 		case service.StatusRunning:
-			fmt.Println("Service is running")
+			pid := readPIDFile(config.GetSystemRuntimeDir())
+			port := readPortFile(config.GetSystemRuntimeDir())
+			if pid > 0 && port > 0 {
+				fmt.Printf("Service is running (PID: %d, Port: %d)\n", pid, port)
+			} else if pid > 0 {
+				fmt.Printf("Service is running (PID: %d)\n", pid)
+			} else {
+				fmt.Println("Service is running")
+			}
 		case service.StatusStopped:
 			fmt.Println("Service is stopped")
 		default:

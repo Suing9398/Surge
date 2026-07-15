@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/SurgeDM/Surge/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -191,6 +192,13 @@ var serviceStatusCmd = &cobra.Command{
 
 		out, _ := sv("status", svServiceName())
 		fmt.Println(out)
+
+		if strings.HasPrefix(out, "run:") {
+			port := readPortFile(config.GetSystemRuntimeDir())
+			if port > 0 {
+				fmt.Printf("Service port: %d\n", port)
+			}
+		}
 		return nil
 	},
 }

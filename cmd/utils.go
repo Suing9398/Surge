@@ -36,6 +36,17 @@ func readPortFile(runtimeDir string) int {
 	return port
 }
 
+func readPIDFile(runtimeDir string) int {
+	pidFile := filepath.Join(runtimeDir, "pid")
+	data, err := os.ReadFile(pidFile)
+	if err != nil {
+		return 0
+	}
+	var pid int
+	_, _ = fmt.Sscanf(string(data), "%d", &pid)
+	return pid
+}
+
 func readStateToken(stateDir string) string {
 	token, err := readTokenFromFile(filepath.Join(stateDir, "token"))
 	if err != nil {
