@@ -316,9 +316,12 @@ func TestResolveTokenForConnectTarget_IPv6LoopbackUsesLocalToken(t *testing.T) {
 
 	origToken := globalToken
 	globalToken = ""
+	origCheck := checkSystemServiceRunning
+	checkSystemServiceRunning = func() bool { return false }
 	t.Setenv("SURGE_TOKEN", "")
 	t.Cleanup(func() {
 		globalToken = origToken
+		checkSystemServiceRunning = origCheck
 	})
 
 	target, err := parseConnectTarget("[::1]:1700", false)
@@ -352,8 +355,11 @@ func TestResolveTokenForConnectTarget_UsesActiveTokenForMatchingLocalPort(t *tes
 
 	origToken := globalToken
 	globalToken = ""
+	origCheck := checkSystemServiceRunning
+	checkSystemServiceRunning = func() bool { return false }
 	t.Cleanup(func() {
 		globalToken = origToken
+		checkSystemServiceRunning = origCheck
 	})
 	if err := writeTokenToFile(filepath.Join(config.GetStateDir(), "token"), "connect-token"); err != nil {
 		t.Fatalf("write token failed: %v", err)

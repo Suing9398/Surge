@@ -146,6 +146,10 @@ func resolveTokenForConnectTarget(target connectTarget) (string, error) {
 			return tok, nil
 		}
 
+		if !isElevated() && checkSystemServiceRunning() {
+			return "", fmt.Errorf("system service is running but its token could not be read. Try connecting with elevated privileges")
+		}
+
 		if tok, err := readTokenFromFile(secondChoice); err == nil && tok != "" {
 			return tok, nil
 		}

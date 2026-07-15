@@ -457,6 +457,30 @@ func TestResolveTokenForConnectTarget_SystemTokenBeatsStaleUserToken(t *testing.
 		"system token must win over stale user token in the no-port-file fallback path")
 }
 
+func TestResolveTokenForConnectTarget_SystemTokenUnreadable(t *testing.T) {
+	if isElevated() {
+		t.Skip("skipping: elevated — system and user token paths are the same")
+	}
+
+	isolateTokenEnv(t)
+	require.NoError(t, config.EnsureDirs())
+
+	// Write a stale user token, but DO NOT write a system token (simulating unreadable/missing)
+	const staleUserToken = "stale-old-user-token"
+	writeUserToken(t, staleUserToken)
+
+	origCheck := checkSystemServiceRunning
+	checkSystemServiceRunning = func() bool { return true }
+	t.Cleanup(func() { checkSystemServiceRunning = origCheck })
+
+	target, err := parseConnectTarget("127.0.0.1:1700", false)
+	require.NoError(t, err)
+
+	_, err = resolveTokenForConnectTarget(target)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "system service is running but its token could not be read")
+}
+
 // ---------------------------------------------------------------------------
 // Subcommand registration
 // ---------------------------------------------------------------------------
