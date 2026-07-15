@@ -171,6 +171,7 @@ func authMiddleware(token string, next http.Handler) http.Handler {
 func ensureAuthToken() string {
 	tokenFile := resolveTokenPath()
 	if token, err := readTokenFromFile(tokenFile); err == nil {
+		mirrorTokenToRuntime(token)
 		return token
 	}
 
@@ -178,6 +179,7 @@ func ensureAuthToken() string {
 	if err := writeTokenToFile(tokenFile, token); err != nil {
 		utils.Debug("Failed to write token file in %s: %v", tokenFile, err)
 	}
+	mirrorTokenToRuntime(token)
 	return token
 }
 
@@ -186,6 +188,7 @@ func persistAuthToken(token string) {
 	if err := writeTokenToFile(tokenFile, token); err != nil {
 		utils.Debug("Failed to write token file in %s: %v", tokenFile, err)
 	}
+	mirrorTokenToRuntime(token)
 }
 
 // ensureSystemToken reads (or generates) the token used by the system service
@@ -194,12 +197,14 @@ func persistAuthToken(token string) {
 func ensureSystemToken() (string, error) {
 	tokenFile := filepath.Join(config.GetSystemStateDir(), "token")
 	if token, err := readTokenFromFile(tokenFile); err == nil {
+		mirrorTokenToRuntime(token)
 		return token, nil
 	}
 	token := uuid.New().String()
 	if err := writeTokenToFile(tokenFile, token); err != nil {
 		return "", fmt.Errorf("failed to write system token to %s: %w", tokenFile, err)
 	}
+	mirrorTokenToRuntime(token)
 	return token, nil
 }
 
@@ -228,4 +233,15 @@ func writeTokenToFile(path string, token string) error {
 		return err
 	}
 	return os.WriteFile(path, []byte(token), 0o600)
+}
+
+// mirrorTokenToRuntime writes a 0644 copy of the token to the runtime dir
+// so that local CLI clients can auto-discover and connect without needing sudo.
+func mirrorTokenToRuntime(token string) {
+	runtimeDir := resolveRuntimeDir()
+	if err := os.MkdirAll(runtimeDir, 0o755); err != nil {
+		return
+	}
+	runtimeTokenFile := filepath.Join(runtimeDir, "token")
+	_ = os.WriteFile(runtimeTokenFile, []byte(token), 0o644)
 }

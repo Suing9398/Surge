@@ -77,7 +77,10 @@ func getActiveConnectionDetails() (activeConnectionDetails, bool) {
 			continue
 		}
 		candidate.port = port
-		candidate.token = readStateToken(candidate.stateDir)
+		candidate.token = readStateToken(candidate.runtimeDir)
+		if candidate.token == "" {
+			candidate.token = readStateToken(candidate.stateDir)
+		}
 		return candidate, true
 	}
 	return activeConnectionDetails{}, false
