@@ -403,6 +403,17 @@ func (m RootModel) View() tea.View {
 		limitChunk = lipgloss.JoinHorizontal(lipgloss.Center, limitGlyph, " ", lipgloss.NewStyle().Foreground(colors.Gray()).Render("\u221E"))
 	}
 
+	// Auto-shutdown indicator
+	powerColor := colors.Gray()
+	if m.isAutoShutdownEnabled() {
+		powerColor = colors.Orange()
+	}
+	powerChunk := lipgloss.NewStyle().
+		Foreground(powerColor).
+		Width(3).
+		Align(lipgloss.Center).
+		Render("\u23fb")
+
 	// Version indicator
 	versionBlue := colors.ThemeColor("#005cc5", "#58a6ff")
 	versionChunk := lipgloss.NewStyle().Foreground(versionBlue).Render(fmt.Sprintf("v%s", m.CurrentVersion))
@@ -411,6 +422,8 @@ func (m RootModel) View() tea.View {
 		speedChunk,
 		dimSep,
 		limitChunk,
+		dimSep,
+		powerChunk,
 		dimSep,
 		versionChunk,
 	))
