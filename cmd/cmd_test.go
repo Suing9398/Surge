@@ -689,6 +689,52 @@ func TestRootCmd_InvalidURL(t *testing.T) {
 	}
 }
 
+func TestRootCmd_FailsIfSystemServiceRunning(t *testing.T) {
+	setupIsolatedCmdState(t)
+
+	// Simulate system service running
+	origCheck := checkSystemServiceRunning
+	checkSystemServiceRunning = func() bool { return true }
+	t.Cleanup(func() { checkSystemServiceRunning = origCheck })
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(buf)
+	rootCmd.SetArgs([]string{"https://example.com/test"})
+
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Fatal("expected error when system service is running, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "system service is already running") {
+		t.Errorf("expected error to mention system service, got %v", err)
+	}
+}
+
+func TestServerStartCmd_FailsIfSystemServiceRunning(t *testing.T) {
+	setupIsolatedCmdState(t)
+
+	// Simulate system service running
+	origCheck := checkSystemServiceRunning
+	checkSystemServiceRunning = func() bool { return true }
+	t.Cleanup(func() { checkSystemServiceRunning = origCheck })
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(buf)
+	rootCmd.SetArgs([]string{"server", "start"})
+
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Fatal("expected error when system service is running, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "system service is already running") {
+		t.Errorf("expected error to mention system service, got %v", err)
+	}
+}
+
 func TestRootCmd_Version(t *testing.T) {
 	if rootCmd.Version == "" {
 		t.Error("rootCmd.Version should not be empty")

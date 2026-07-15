@@ -36,6 +36,8 @@ func readPortFile(runtimeDir string) int {
 	return port
 }
 
+var checkSystemServiceRunning = isSystemServiceRunning
+
 func readPIDFile(runtimeDir string) int {
 	pidFile := filepath.Join(runtimeDir, "pid")
 	data, err := os.ReadFile(pidFile)
