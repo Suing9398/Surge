@@ -418,6 +418,11 @@ func TestTokenCmd_ErrorsIfSystemServiceRunningButUnreadable(t *testing.T) {
 	isolateTokenEnv(t)
 	require.NoError(t, config.EnsureDirs())
 
+	// Simulate a stale user daemon leaving a token and port file behind
+	writeUserToken(t, "stale-user-token")
+	portFile := filepath.Join(config.GetRuntimeDir(), "port")
+	require.NoError(t, os.WriteFile(portFile, []byte("1700"), 0644))
+
 	origCheck := checkSystemServiceRunning
 	checkSystemServiceRunning = func() bool { return true }
 	t.Cleanup(func() { checkSystemServiceRunning = origCheck })
