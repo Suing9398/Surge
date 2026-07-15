@@ -372,7 +372,8 @@ func TestTokenCmd_PrintsActiveServerToken(t *testing.T) {
 	writeUserToken(t, want)
 
 	out := captureStdout(t, func() {
-		tokenCmd.Run(tokenCmd, nil)
+		err := tokenCmd.RunE(tokenCmd, nil)
+		require.NoError(t, err)
 	})
 	assert.Equal(t, want, strings.TrimSpace(out))
 }
@@ -395,7 +396,8 @@ func TestTokenCmd_IgnoresSURGE_TOKEN_Override(t *testing.T) {
 	t.Setenv("SURGE_TOKEN", "override-should-not-appear")
 
 	out := captureStdout(t, func() {
-		tokenCmd.Run(tokenCmd, nil)
+		err := tokenCmd.RunE(tokenCmd, nil)
+		require.NoError(t, err)
 	})
 	assert.Equal(t, daemonToken, strings.TrimSpace(out),
 		"surge token must print the daemon's persisted token, not the SURGE_TOKEN override")
@@ -417,6 +419,10 @@ func TestResolveTokenForConnectTarget_SystemTokenBeatsStaleUserToken(t *testing.
 	// Both tokens exist on disk; no port file matches target port.
 	writeSystemTokenTo(t, dirs.systemState, sysToken)
 	writeUserToken(t, staleUserToken)
+
+	origCheck := checkSystemServiceRunning
+	checkSystemServiceRunning = func() bool { return true }
+	t.Cleanup(func() { checkSystemServiceRunning = origCheck })
 
 	target, err := parseConnectTarget("127.0.0.1:1700", false)
 	require.NoError(t, err)

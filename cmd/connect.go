@@ -128,15 +128,25 @@ func resolveTokenForConnectTarget(target connectTarget) (string, error) {
 			return resolveLocalTokenForDetails(details), nil
 		}
 
-		// No matching port file. Prefer the system service token over a potentially
-		// stale user-level token to avoid 401s against the system daemon.
-		systemTokenFile := filepath.Join(config.GetSystemStateDir(), "token")
-		if tok, err := readTokenFromFile(systemTokenFile); err == nil && tok != "" {
+		// No matching port file. Prioritize the privilege level of the daemon we are most likely talking to.
+		var firstChoice, secondChoice string
+		if !isElevated() && checkSystemServiceRunning() {
+			firstChoice = filepath.Join(config.GetSystemStateDir(), "token")
+			secondChoice = filepath.Join(config.GetStateDir(), "token")
+		} else {
+			firstChoice = resolveTokenPath()
+			if isElevated() {
+				secondChoice = filepath.Join(config.GetStateDir(), "token")
+			} else {
+				secondChoice = filepath.Join(config.GetSystemStateDir(), "token")
+			}
+		}
+
+		if tok, err := readTokenFromFile(firstChoice); err == nil && tok != "" {
 			return tok, nil
 		}
 
-		userTokenFile := filepath.Join(config.GetStateDir(), "token")
-		if tok, err := readTokenFromFile(userTokenFile); err == nil && tok != "" {
+		if tok, err := readTokenFromFile(secondChoice); err == nil && tok != "" {
 			return tok, nil
 		}
 
