@@ -9,7 +9,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: projg2/golang-dist-mirror-action@v1
       - uses: actions/checkout@v4
+      - uses: projg2/golang-dist-mirror-action@v1
         with:
           token: ${{ secrets.MIRROR_TOKEN }}
