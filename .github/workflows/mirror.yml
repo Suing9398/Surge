@@ -1,0 +1,15 @@
+name: Update golang-dist mirror
+on:
+  schedule:
+    - cron: "12 * * * *"
+  workflow_dispatch:
+jobs:
+  sync-mirror:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: projg2/golang-dist-mirror-action@v1
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MIRROR_TOKEN }}
